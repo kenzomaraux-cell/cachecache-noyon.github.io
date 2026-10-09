@@ -1,0 +1,53 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function admin() {
+      return signedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+    function allowedTeam(team) { return team == 'pending' || team == 'seekers' || team == 'hiders'; }
+
+    match /games/{gameId} {
+      // Une partie est lisible avec son code (qui est aussi son ID).
+      // La liste complète est réservée aux organisateurs prédéfinis.
+      allow get: if signedIn();
+      allow list: if admin();
+      allow create: if admin()
+        && request.resource.data.organizerId == request.auth.uid
+        && gameId == request.resource.data.code
+        && request.resource.data.code is string
+        && request.resource.data.name is string
+        && request.resource.data.maxPlayers is int
+        && request.resource.data.maxPlayers >= 2 && request.resource.data.maxPlayers <= 80
+        && request.resource.data.durationMinutes is int
+        && request.resource.data.durationMinutes >= 5 && request.resource.data.durationMinutes <= 240
+        && request.resource.data.seekerCount is int
+        && request.resource.data.status == 'open';
+      // Tous les organisateurs prédéfinis peuvent gérer toute partie.
+      allow update, delete: if admin();
+
+      match /players/{playerId} {
+        allow get, list: if signedIn();
+        // Un joueur ne peut créer que sa propre fiche et commence obligatoirement sans équipe.
+        allow create: if signedIn()
+          && playerId == request.auth.uid
+          && request.resource.data.uid == request.auth.uid
+          && request.resource.data.displayName is string
+          && request.resource.data.displayName.size() >= 1 && request.resource.data.displayName.size() <= 24
+          && request.resource.data.team == 'pending'
+          && request.resource.data.status == 'active';
+        // Les organisateurs gèrent les équipes et exclusions. Un joueur ne peut actualiser que lastSeen.
+        allow update: if admin() || (signedIn() && playerId == request.auth.uid
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['lastSeen']));
+        allow delete: if admin();
+      }
+    }
+
+    // Liste blanche créée manuellement dans la console Firebase.
+    // Les clients ne peuvent jamais s'ajouter eux-mêmes comme organisateurs.
+    match /admins/{adminId} {
+      allow get: if signedIn() && adminId == request.auth.uid;
+      allow list, create, update, delete: if false;
+    }
+  }
+}

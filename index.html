@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#071426" />
+    <meta name="description" content="Organisez un cache-cache géant à Noyon." />
+    <title>Cache-cache Noyon</title>
+    <link rel="preconnect" href="https://www.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body>
+    <div class="ambient ambient-one"></div><div class="ambient ambient-two"></div>
+    <header class="site-header container">
+      <a class="brand" href="#accueil" aria-label="Cache-cache Noyon, accueil">
+        <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+        <span>CACHE-CACHE <b>NOYON</b></span>
+      </a>
+      <button id="accountButton" class="button button-ghost" type="button">Accès organisateur</button>
+    </header>
+
+    <main class="container">
+      <section id="homeView" class="view active">
+        <section class="hero">
+          <div class="eyebrow"><span></span> Jeu urbain · Noyon, Oise</div>
+          <h1>La ville devient<br /><em>ton terrain de jeu.</em></h1>
+          <p>Créez une partie de cache-cache géant, formez les équipes et lancez un chrono synchronisé pour tous.</p>
+          <div class="hero-actions">
+            <button class="button button-primary button-large" data-go="createView">Créer une partie <span>→</span></button>
+            <button class="button button-secondary button-large" data-go="joinView">Rejoindre une partie</button>
+          </div>
+          <div class="safety-strip">Jouez à pied, respectez les lieux et ne pénétrez jamais sur une propriété privée.</div>
+        </section>
+
+        <section class="feature-grid" aria-label="Fonctionnement">
+          <article class="feature-card"><span class="feature-number">01</span><h2>Créez</h2><p>Configurez la durée, les places et les équipes. Un code de salle unique est généré.</p></article>
+          <article class="feature-card"><span class="feature-number">02</span><h2>Invitez</h2><p>Partagez le code ou le lien : les joueurs arrivent directement dans la salle d’attente.</p></article>
+          <article class="feature-card"><span class="feature-number">03</span><h2>Jouez</h2><p>Répartissez les équipes puis démarrez. Le temps restant est le même pour tout le monde.</p></article>
+        </section>
+
+        <section class="rules-panel">
+          <div><div class="eyebrow"><span></span> Avant de jouer</div><h2>Les règles essentielles</h2></div>
+          <ol>
+            <li>Restez toujours dans la zone et les horaires convenus par l’organisateur.</li>
+            <li>Respectez piétons, riverains, circulation et mobilier urbain.</li>
+            <li>Ne courez pas sur la chaussée et n’entrez jamais dans un bâtiment ou lieu privé.</li>
+          </ol>
+        </section>
+      </section>
+
+      <section id="authView" class="view narrow-view">
+        <button class="back-link" data-go="homeView">← Retour à l’accueil</button>
+        <div class="panel auth-panel">
+          <div class="eyebrow"><span></span> Accès protégé</div>
+          <h1>Espace organisateur</h1>
+          <p class="muted">Cet espace est réservé aux comptes organisateurs autorisés à l’avance par l’administrateur Firebase.</p>
+          <form id="loginForm" class="form-stack">
+            <label>Adresse e-mail<input required type="email" name="email" autocomplete="email" /></label>
+            <label>Mot de passe<input required minlength="6" type="password" name="password" autocomplete="current-password" /></label>
+            <button class="button button-primary" type="submit">Se connecter</button>
+          </form>
+        </div>
+      </section>
+
+      <section id="createView" class="view narrow-view">
+        <button class="back-link" data-go="homeView">← Retour à l’accueil</button>
+        <div class="panel">
+          <div class="eyebrow"><span></span> Organisateur</div><h1>Créer une partie</h1>
+          <p class="muted">Les champs pourront être modifiés tant que la partie n’a pas commencé.</p>
+          <form id="createGameForm" class="form-stack">
+            <label>Nom de la partie<input required maxlength="48" name="name" placeholder="Ex. Cache-cache du samedi" /></label>
+            <div class="form-row">
+              <label>Joueurs maximum<input required min="2" max="80" value="12" type="number" name="maxPlayers" /></label>
+              <label>Durée <small>en minutes</small><input required min="5" max="240" value="45" type="number" name="durationMinutes" /></label>
+            </div>
+            <div class="form-row">
+              <label>Nombre de chercheurs<input required min="1" max="20" value="2" type="number" name="seekerCount" /></label>
+              <label>Nombre d’équipes<input readonly value="2 — chercheurs / cachés" /></label>
+            </div>
+            <button class="button button-primary" type="submit">Générer la partie <span>→</span></button>
+          </form>
+        </div>
+      </section>
+
+      <section id="joinView" class="view narrow-view">
+        <button class="back-link" data-go="homeView">← Retour à l’accueil</button>
+        <div class="panel">
+          <div class="eyebrow"><span></span> Joueur</div><h1>Rejoindre une partie</h1>
+          <p class="muted">Choisissez un pseudo : ne partagez pas votre nom complet ou vos coordonnées.</p>
+          <form id="joinGameForm" class="form-stack">
+            <label>Votre pseudo<input required maxlength="24" name="displayName" placeholder="Ex. NinjaNoyon" /></label>
+            <label>Code de la partie<input required pattern="[A-Za-z0-9]{6}" maxlength="6" class="code-input" name="code" placeholder="ABC123" /></label>
+            <button class="button button-primary" type="submit">Entrer dans la salle <span>→</span></button>
+          </form>
+        </div>
+      </section>
+
+      <section id="roomView" class="view">
+        <button class="back-link" data-go="homeView">← Quitter la salle</button>
+        <div id="roomContent"></div>
+      </section>
+
+      <section id="organizerView" class="view">
+        <button class="back-link" data-go="homeView">← Accueil</button>
+        <div class="dashboard-head"><div><div class="eyebrow"><span></span> Tableau de bord sécurisé</div><h1>Toutes les parties</h1></div><button class="button button-primary" data-go="createView">Créer une partie</button></div>
+        <div id="myGames" class="game-list"></div>
+      </section>
+    </main>
+
+    <div id="toast" role="status" aria-live="polite"></div>
+    <template id="roomTemplate">
+      <div class="room-top"><div><div class="eyebrow"><span></span> <span data-room-status></span></div><h1 data-room-name></h1><p class="muted">Code <button class="code-pill" data-copy-code></button></p></div><div class="timer-card"><span>Temps restant</span><strong data-timer>--:--</strong></div></div>
+      <div class="room-layout">
+        <section class="panel players-panel"><div class="panel-heading"><div><h2>Joueurs <span data-player-count></span></h2><p class="muted" data-room-message></p></div><span class="live-dot" title="Mise à jour en direct"></span></div><div data-players class="players-list"></div></section>
+        <aside class="panel control-panel" data-controls></aside>
+      </div>
+    </template>
+    <script type="module" src="js/app.js?v=20261009-2"></script>
+  </body>
+</html>
