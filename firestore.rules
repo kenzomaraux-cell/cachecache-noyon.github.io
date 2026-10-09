@@ -1,0 +1,45 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function organizer(gameId) {
+      return signedIn() && get(/databases/$(database)/documents/games/$(gameId)).data.organizerId == request.auth.uid;
+    }
+    function allowedTeam(team) { return team == 'pending' || team == 'seekers' || team == 'hiders'; }
+
+    match /games/{gameId} {
+      // Une partie est lisible avec son code (qui est aussi son ID). Les listes sont
+      // réservées aux propres parties de l'organisateur : pas d'annuaire public des salles.
+      allow get: if signedIn();
+      allow list: if signedIn() && resource.data.organizerId == request.auth.uid;
+      allow create: if signedIn()
+        && request.resource.data.organizerId == request.auth.uid
+        && gameId == request.resource.data.code
+        && request.resource.data.code is string
+        && request.resource.data.name is string
+        && request.resource.data.maxPlayers is int
+        && request.resource.data.maxPlayers >= 2 && request.resource.data.maxPlayers <= 80
+        && request.resource.data.durationMinutes is int
+        && request.resource.data.durationMinutes >= 5 && request.resource.data.durationMinutes <= 240
+        && request.resource.data.seekerCount is int
+        && request.resource.data.status == 'open';
+      // Seul le créateur authentifié peut changer le statut, le chrono et le résultat.
+      allow update, delete: if organizer(gameId);
+
+      match /players/{playerId} {
+        allow get, list: if signedIn();
+        // Un joueur ne peut créer que sa propre fiche et commence obligatoirement sans équipe.
+        allow create: if signedIn()
+          && playerId == request.auth.uid
+          && request.resource.data.uid == request.auth.uid
+          && request.resource.data.displayName is string
+          && request.resource.data.displayName.size() >= 1 && request.resource.data.displayName.size() <= 24
+          && request.resource.data.team == 'pending';
+        // L'organisateur gère les équipes et exclusions. Un joueur ne peut actualiser que lastSeen.
+        allow update: if organizer(gameId) || (signedIn() && playerId == request.auth.uid
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['lastSeen']));
+        allow delete: if organizer(gameId) || (signedIn() && playerId == request.auth.uid);
+      }
+    }
+  }
+}
